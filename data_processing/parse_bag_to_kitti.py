@@ -17,6 +17,7 @@ kLeftCamDirName = "image_0"
 kRightCamDirName = "image_1"
 kTimestampFilename = "times.txt"
 kImageSuffix = ".png"
+kStartIndex = 0
 
 def parse_opt():
     parser = argparse.ArgumentParser()
@@ -52,19 +53,22 @@ def parse_bag(args):
     fp_timestamp = open(timestamp_filepath, "w")
     if fp_timestamp.closed:
         raise FileNotFoundError("Failed to open file " + timestamp_filepath)
-    img_idx = 0
+    left_img_idx = kStartIndex
+    right_img_idx = kStartIndex
     for topic, msg, t in bag.read_messages(topics=[kLeftImageTopicName, kRightImageTopicName]):
         bridge = CvBridge()
         img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="passthrough")
-        filename = f'{img_idx:06}' + kImageSuffix
         if topic == kLeftImageTopicName:
+            filename = f'{left_img_idx:06}' + kImageSuffix
             filepath = os.path.join(cam0_dir, filename)
             cv2.imwrite(filepath, img)
             fp_timestamp.write(str(t.to_time())+"\n")
+            left_img_idx += 1
         elif topic == kRightImageTopicName:
+            filename = f'{right_img_idx:06}' + kImageSuffix
             filepath = os.path.join(cam1_dir, filename)
             cv2.imwrite(filepath, img)
-        img_idx += 1
+            right_img_idx += 1
     fp_timestamp.close()
 
 
