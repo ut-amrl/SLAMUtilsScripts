@@ -27,6 +27,10 @@ def parse_opt():
                         help="Output root directory. It will create a subdirectory named by <outputname>.")
     parser.add_argument("--outputname", default="", required=False, type=str,
                         help="Output name. If it's not specified, it will use the bagfile name.")
+    parser.add_argument("--left_img_topic", default="", required=False, type=str,
+                        help="Left Image ROS Topic name")
+    parser.add_argument("--right_img_topic", default="", required=False, type=str,
+                        help="Rights Image ROS Topic name")
     args = parser.parse_args()
     if not os.path.exists(args.bagfile):
         raise FileNotFoundError("Input bagfile " + args.bagfile + " doesn't exist")
@@ -39,6 +43,14 @@ def parse_opt():
     if not os.path.exists(args.outputdir):
         print("Creating output directory " + args.outputdir)
         os.makedirs(args.outputdir, exist_ok=True)
+    if args.left_img_topic == "":
+        print("Not providing left image topic. Using default: " + kLeftImageTopicName)
+    else:
+        kLeftImageTopicName = args.left_img_topic
+    if args.right_img_topic == "":
+        print("Not providing right image topic. Using default: " + kRightImageTopicName)
+    else:
+        kRightImageTopicName = args.right_img_topic
     return args
 
 def parse_bag(args):
