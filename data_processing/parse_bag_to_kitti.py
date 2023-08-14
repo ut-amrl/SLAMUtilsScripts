@@ -1,7 +1,6 @@
 # system
 import os 
 import argparse
-import yaml
 from pathlib import Path
 
 # images
@@ -16,6 +15,7 @@ kRightImageTopicName = "/zed2i/zed_node/right/image_rect_color/compressed"
 kLeftCamDirName = "image_0"
 kRightCamDirName = "image_1"
 kTimestampFilename = "times.txt"
+kNodeAndTimestampFilename = "node_ids_and_timestamps.txt"
 kImageSuffix = ".png"
 kStartIndex = 0
 
@@ -44,11 +44,11 @@ def parse_opt():
         print("Creating output directory " + args.outputdir)
         os.makedirs(args.outputdir, exist_ok=True)
     if args.left_img_topic == "":
-        print("Not providing left image topic. Using default: " + kLeftImageTopicName)
+        print("Not providing left image topic. Using default")
     else:
         kLeftImageTopicName = args.left_img_topic
     if args.right_img_topic == "":
-        print("Not providing right image topic. Using default: " + kRightImageTopicName)
+        print("Not providing right image topic. Using default")
     else:
         kRightImageTopicName = args.right_img_topic
     return args
@@ -65,6 +65,12 @@ def parse_bag(args):
     fp_timestamp = open(timestamp_filepath, "w")
     if fp_timestamp.closed:
         raise FileNotFoundError("Failed to open file " + timestamp_filepath)
+    node_and_timestamp_filepath = os.path.join(args.outputdir, kNodeAndTimestampFilename)
+    fp_node_and_timestamp = open(node_and_timestamp_filepath, "w")
+    if fp_node_and_timestamp.closed:
+        raise FileNotFoundError("Failed to open file " + node_and_timestamp_filepath)
+    fp_node_and_timestamp.write("node_id, seconds, nanoseconds\n")
+
     left_img_idx = kStartIndex
     right_img_idx = kStartIndex
     for topic, msg, t in bag.read_messages(topics=[kLeftImageTopicName, kRightImageTopicName]):
@@ -75,6 +81,7 @@ def parse_bag(args):
             filepath = os.path.join(cam0_dir, filename)
             cv2.imwrite(filepath, img)
             fp_timestamp.write(str(t.to_time())+"\n")
+            fp_node_and_timestamp.write(str(left_img_idx) + ", " + str(t.secs) + ", " + str(t.nsecs) + "\n")
             left_img_idx += 1
         elif topic == kRightImageTopicName:
             filename = f'{right_img_idx:06}' + kImageSuffix
@@ -82,9 +89,10 @@ def parse_bag(args):
             cv2.imwrite(filepath, img)
             right_img_idx += 1
     fp_timestamp.close()
-
+    fp_node_and_timestamp.close()
 
 if __name__ == "__main__":
     args = parse_opt()
     print(args)
     parse_bag(args)
+    print("Finish parsing " + args.bagfile)
